@@ -1,0 +1,76 @@
+load("//macros/webjsgazelle:web_assets.bzl", "web_assets")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@bazel_gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@npm//:next/package_json.bzl", next_bin = "bin")
+load("@npm//:tsconfig-to-swcconfig/package_json.bzl", tsconfig_to_swcconfig = "bin")
+
+###############################################################################
+# Bazel now uses Bzlmod by default to manage external dependencies.
+# Please consider migrating your external dependencies from WORKSPACE to MODULE.bazel.
+#
+# For more details, please check https://github.com/bazelbuild/bazel/issues/18958
+###############################################################################
+
+# gazelle:exclude .next
+# gazelle:exclude **/node_modules
+# gazelle:exclude .eslintrc.json
+# gazelle:exclude tsconfig.json
+
+# gazelle:js_package_file package.json :node_modules
+# gazelle:js_collect_barrels
+# gazelle:js_web_asset .json,.css,.scss,.svg,.ico
+# gazelle:js_collect_all_assets
+# gazelle:js_root
+
+# gazelle:map_kind jest_test jest_test //macros/webjsgazelle:jest_test.bzl
+# gazelle:map_kind ts_project ts_project //macros/webjsgazelle:ts_project.bzl
+# gazelle:map_kind web_assets web_assets //macros/webjsgazelle:web_assets.bzl
+
+# gazelle:prefix sage
+# gazelle:go_grpc_compilers	@io_bazel_rules_go//proto:go_proto,@io_bazel_rules_go//proto:go_grpc_v2
+gazelle(
+    name = "gazelle",
+    gazelle = "gazelle_bin",
+)
+
+gazelle_binary(
+    name = "gazelle_bin",
+    languages = DEFAULT_LANGUAGES + ["@com_github_benchsci_rules_nodejs_gazelle//gazelle:gazelle"],
+)
+
+npm_link_all_packages(name = "node_modules")
+
+next_bin.next_binary(
+    name = "next_js_binary",
+    visibility = ["//visibility:public"],
+)
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "package_json",
+    srcs = ["package.json"],
+)
+
+tsconfig_to_swcconfig.t2s(
+    name = "write_swcrc",
+    srcs = ["tsconfig.json"],
+    stdout = ".swcrc",
+    visibility = ["//:__subpackages__"],
+)
+
+web_assets(
+    name = "bazel_registry_json",
+    srcs = ["bazel_registry.json"],
+)
+
+web_assets(
+    name = "all_assets",
+    srcs = ["//:bazel_registry_json"],
+)

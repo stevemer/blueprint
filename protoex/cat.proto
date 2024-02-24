@@ -1,0 +1,9 @@
+
+syntax = "proto3";
+package cat;
+option go_package = "sage/protoex";
+
+
+message Cat {
+    string name = 1;
+}

@@ -1,0 +1,88 @@
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//macros/webjsgazelle:next.bzl", "next")
+load("//macros/webjsgazelle:web_assets.bzl", "web_assets")
+
+# gazelle:exclude next-env.d.ts
+# gazelle:exclude next.config.js
+
+# gazelle:js_collect_web_assets
+# gazelle:js_collect_all_assets
+
+# gazelle:js_package_file package.json :node_modules
+# gazelle:js_jest_config :jest.config
+# gazelle:js_jest_test_per_shard 25
+
+# gazelle:js_root
+
+# gazelle:js_visibility //web/app:__subpackages__
+
+npm_link_all_packages(name = "node_modules")
+
+# Run `bazel build //web/app:next` to build (equivalent to running `next build`).
+#
+# It is recommended that you use [ibazel](https://github.com/bazelbuild/bazel-watcher)
+# to run the devserver targets.
+#
+# Run `ibazel run //web/app:next_dev` to run the development server in watch mode
+# (equivalent to running `next dev`).
+#
+# Run `ibazel run //web/app:next_start` to run the production server in watch mode
+# (equivalent to running `next start`).
+next(
+    name = "next",
+    srcs = [
+        ":all_assets",
+        "//web/app/pages",
+    ],
+    data = [
+        "next.config.js",
+        "package.json",
+        ":node_modules/is-even",
+    ],
+    next_bin = "../../node_modules/.bin/next",
+    next_js_binary = "//:next_js_binary",
+)
+
+# A smoke test on the artifact produced by the :next target
+js_test(
+    name = "build_smoke_test",
+    size = "small",
+    chdir = package_name(),
+    data = [":next"],
+    entry_point = "build_smoke_test.js",
+)
+
+build_test(
+    name = "build_test",
+    targets = [
+        ":next",
+        # Not build testing the `:next_export` target since this `next export` writes back to the `.next` directory which
+        # causes issues with trying to write to an input. See https://github.com/vercel/next.js/issues/43344.
+        # TODO: fix in Next.js (https://github.com/vercel/next.js/issues/43344) or find work-around.
+        # ":next_export",
+    ],
+)
+
+js_library(
+    name = "jest.config",
+    srcs = ["jest.config.js"],
+    data = ["//web/app:node_modules/next"],
+    visibility = ["//web/app:__subpackages__"],
+    deps = ["//web/app:node_modules/next"],
+)
+
+js_library(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//web/app:__subpackages__"],
+)
+
+web_assets(
+    name = "all_assets",
+    srcs = [
+        "//web/app/public:assets",
+        "//web/app/styles:assets",
+    ],
+)

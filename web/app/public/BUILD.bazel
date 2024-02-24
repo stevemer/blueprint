@@ -1,0 +1,10 @@
+load("//macros/webjsgazelle:web_assets.bzl", "web_assets")
+
+web_assets(
+    name = "assets",
+    srcs = [
+        "favicon.ico",
+        "vercel.svg",
+    ],
+    visibility = ["//web/app:__subpackages__"],
+)

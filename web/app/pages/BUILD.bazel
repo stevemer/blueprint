@@ -1,0 +1,51 @@
+load("//macros/webjsgazelle:jest_test.bzl", "jest_test")
+load("//macros/webjsgazelle:ts_project.bzl", "ts_project")
+
+# gazelle:js_collect_all
+
+ts_project(
+    name = "pages",
+    srcs = [
+        "_app.tsx",
+        "api/hello.ts",
+        "index.tsx",
+    ],
+    data = [
+        "//:node_modules/next",
+        "//:node_modules/react",
+        "//web/app/styles:assets",
+    ],
+    visibility = ["//web/app:__subpackages__"],
+    deps = [
+        "//:node_modules/@types/react",
+        "//:node_modules/next",
+        "//:node_modules/react",
+    ],
+)
+
+jest_test(
+    name = "pages_test",
+    srcs = ["index.test.tsx"],
+    config = "//web/app:jest.config",
+    data = [
+        ":pages",
+        "//:node_modules/@testing-library/jest-dom",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/jest",
+        "//:node_modules/jest-environment-jsdom",
+        "//:node_modules/jest-transform-stub",
+        "//:node_modules/react",
+        "//web/app:package_json",
+    ],
+    snapshots = ["__snapshots__"],
+    visibility = ["//web/app:__subpackages__"],
+    deps = [
+        ":pages",
+        "//:node_modules/@testing-library/jest-dom",
+        "//:node_modules/@testing-library/react",
+        "//:node_modules/@types/jest",
+        "//:node_modules/jest-environment-jsdom",
+        "//:node_modules/jest-transform-stub",
+        "//:node_modules/react",
+    ],
+)

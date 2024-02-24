@@ -1,0 +1,5 @@
+bazel-bin
+bazel-golang-bazel-grpc-proto
+bazel-out
+bazel-testlogs
+node_modules
